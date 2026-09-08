@@ -28,7 +28,10 @@ location ~ ^${XO_SHOP_PATH_PREFIX}/(admin|api|store-api|bundles|theme|media|thum
     proxy_set_header X-Forwarded-Prefix  ${XO_SHOP_PATH_PREFIX};
 }
 
-location ^~ ${XO_SHOP_PATH_PREFIX}/ {
+# deliberately NO ^~ modifier: ^~ would suppress the regex location above,
+# sending admin/API requests unstripped into the storefront virtual path
+# (ends in a Context-null 500 on /admin).
+location ${XO_SHOP_PATH_PREFIX}/ {
     proxy_pass http://shopware:80;
     proxy_set_header Host                $http_host;
     proxy_set_header X-Forwarded-Proto   https;
