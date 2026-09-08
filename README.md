@@ -1,6 +1,6 @@
 # make-shopware
 
-Shopware 6 bundle for the xebro dev setup (`make-core`): dev image on top of
+Shopware 6 bundle for the XDS (`make-core`): dev image on top of
 the central FrankenPHP base image (`base/shopware` from the xebro ECR) plus
 dedicated MySQL and Mailpit containers. The shop code lives versioned in
 `./app` (Composer project, bootstrapped by `shopware.project`); the database
