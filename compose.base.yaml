@@ -1,8 +1,11 @@
 services:
   shopware:
     build:
-      context: ${XO_ROOT_DIR}
-      dockerfile: docker/shopware/Dockerfile
+      # module dir as context: the dev image only adds tooling on top of the
+      # base image, no COPY from the project — keeps the context tiny and
+      # independent of where the shop code lives
+      context: ${XO_ROOT_DIR}/docker/shopware
+      dockerfile: Dockerfile
       target: dev
       args:
         BASE_ECR_REGISTRY: ${BASE_ECR_REGISTRY}
@@ -24,9 +27,11 @@ services:
       XDEBUG_MODE: ${XO_SHOPWARE_XDEBUG_MODE}
       COMPOSER_HOME: /tmp/composer
     volumes:
-      - ${XO_ROOT_DIR}/app:/app:rw
-      - ${XO_ROOT_DIR}/custom/plugins:/app/custom/plugins:rw
-      - ${XO_ROOT_DIR}/custom/apps:/app/custom/apps:rw
+      # XO_SHOPWARE_PROJECT_DIR: where the shop code lives relative to the
+      # project root ("." = root, "shop" = subrepo layout)
+      - ${XO_ROOT_DIR}/${XO_SHOPWARE_PROJECT_DIR:-.}/app:/app:rw
+      - ${XO_ROOT_DIR}/${XO_SHOPWARE_PROJECT_DIR:-.}/custom/plugins:/app/custom/plugins:rw
+      - ${XO_ROOT_DIR}/${XO_SHOPWARE_PROJECT_DIR:-.}/custom/apps:/app/custom/apps:rw
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

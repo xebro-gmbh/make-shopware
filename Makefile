@@ -15,6 +15,9 @@
         shopware.build shopware.restart shopware.reset shopware.post_start shopware.debug \
         debug help install init post_start restart
 
+# where the shop code lives relative to the project root ("." or e.g. "shop")
+XO_SHOPWARE_PROJECT_DIR ?= .
+
 DOCKER_SHOPWARE=${DOCKER_COMPOSE} exec shopware
 DOCKER_SHOPWARE_DB=${DOCKER_COMPOSE} exec shopware-db
 SHOPWARE_CONSOLE=${DOCKER_SHOPWARE} php /app/bin/console
@@ -124,7 +127,7 @@ shopware.domain: ## Point the storefront sales channel domain to XO_SHOPWARE_APP
 shopware.install:
 	$(call headline,"Installing shopware")
 	$(call seed_env_vars,".env","${SHOPWARE_DIR}config/.env.seed")
-	@mkdir -p custom/plugins custom/apps app
+	@mkdir -p ${XO_SHOPWARE_PROJECT_DIR}/custom/plugins ${XO_SHOPWARE_PROJECT_DIR}/custom/apps ${XO_SHOPWARE_PROJECT_DIR}/app
 	@mkdir -p ${XO_CONFIG_DIR}/proxy
 	$(call ensure_file,${SHOPWARE_DIR_ABS}config/20-shop.conf.template,${XO_CONFIG_DIR}/proxy)
 
@@ -137,8 +140,8 @@ shopware.init: shopware.install ## One-shot init: build image, bootstrap project
 
 shopware.project: ## Bootstrap the Shopware composer project into ./app (only if missing)
 	$(call target_name,$@)
-	@if [ -f app/composer.json ]; then \
-		printf "${Purple}./app already contains a project, skipping create-project.\n"; \
+	@if [ -f ${XO_SHOPWARE_PROJECT_DIR}/app/composer.json ]; then \
+		printf "${Purple}${XO_SHOPWARE_PROJECT_DIR}/app already contains a project, skipping create-project.\n"; \
 	else \
 		${DOCKER_COMPOSE} run --rm --no-deps shopware bash -c "composer create-project --no-interaction --no-install shopware/production:${XO_SHOPWARE_VERSION} /tmp/sw && cd /tmp/sw && composer config policy.advisories.ignore --json '[\"mcp/sdk\"]' && composer install --no-interaction && rsync -a /tmp/sw/ /app/"; \
 	fi
@@ -181,7 +184,7 @@ shopware.post_start:
 	@printf "${Purple}Admin:       ${Yellow}${XO_SHOPWARE_APP_URL}/admin ${Gray}(admin / shopware)\n"
 	@printf "${Purple}Mailpit:     ${Yellow}http://localhost:${XO_SHOPWARE_MAIL_PORT}\n"
 	@printf "${Purple}MySQL:       ${Yellow}localhost:${XO_SHOPWARE_DB_PORT} ${Gray}(root / root, db: shopware)\n"
-	@printf "${Purple}Plugins DIR: ${Yellow}./custom/plugins\n"
+	@printf "${Purple}Plugins DIR: ${Yellow}${XO_SHOPWARE_PROJECT_DIR}/custom/plugins\n"
 
 shopware.debug: ## Print shopware component environment
 	@$(call target_name,"DEBUGGING Shopware")
