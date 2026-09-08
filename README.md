@@ -10,7 +10,7 @@ is ephemeral and gets rebuilt via `make init`.
 
 ```bash
 make install   # seed .env, create directories, register proxy route
-make init      # build image, bootstrap project, start containers,
+make init      # pull base-dev image, bootstrap project, start containers,
                # install Shopware, theme + fixtures
 ```
 

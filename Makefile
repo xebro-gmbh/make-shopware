@@ -168,8 +168,8 @@ shopware.fixtures: ## Rebuild demo content via XO_SHOPWARE_FIXTURES_CMD, e.g. ma
 		printf "${Purple}XO_SHOPWARE_FIXTURES_CMD not set, skipping fixtures.\n"; \
 	fi
 
-shopware.build: ## (Re)build the shopware docker image
-	@${DOCKER_COMPOSE} build shopware
+shopware.build: ## Pull the current base-dev image (built globally, no local build)
+	@${DOCKER_COMPOSE} pull shopware
 
 shopware.restart: ## Restart the shopware container
 	$(call target_name,$@)

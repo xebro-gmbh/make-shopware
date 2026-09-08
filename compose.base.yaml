@@ -1,14 +1,9 @@
 services:
   shopware:
-    build:
-      # module dir as context: the dev image only adds tooling on top of the
-      # base image, no COPY from the project — keeps the context tiny and
-      # independent of where the shop code lives
-      context: ${XO_ROOT_DIR}/docker/shopware
-      dockerfile: Dockerfile
-      target: dev
-      args:
-        BASE_ECR_REGISTRY: ${BASE_ECR_REGISTRY}
+    # No local image build (raffl pattern): the dev image is built globally
+    # by the base-image-shopware repo and pushed to the root-account ECR.
+    # The app subrepo only ships the Dockerfile for the final prod image.
+    image: ${BASE_ECR_REGISTRY}/base/shopware:${XO_SHOPWARE_BASE_DEV_TAG:-base-dev}
     container_name: ${XO_PROJECT_NAME}-shopware
     ports:
       - "${XO_SHOPWARE_HTTP_PORT}:80"
