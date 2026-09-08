@@ -1,21 +1,38 @@
 # Route snippet of the shopware bundle: shop under ${XO_SHOP_PATH_PREFIX}/.
-# Publicly the prefix is preserved; internally it is stripped and replaced by
-# X-Forwarded-Prefix (Symfony convention — without stripping, /admin, /api
-# and /store-api would be 404 under the prefix). Same contract as in
-# production (where a CloudFront function does the stripping).
+#
+# HYBRID routing — two different mechanisms on purpose:
+#
+# 1. Technical paths (admin, APIs, physical assets, profiler): prefix is
+#    STRIPPED and passed as X-Forwarded-Prefix (Symfony convention). These
+#    are plain Symfony routes / static files that know nothing about sales
+#    channel domains.
+#
+# 2. Storefront (everything else): prefix is KEPT and no X-Forwarded-Prefix
+#    is sent. The sales channel domain (https://host<prefix>) matches the
+#    full path — Shopware's native virtual-path feature. Do NOT strip here:
+#    full stripping + prefix header breaks the storefront ESI fragments
+#    (header/footer subrequests re-apply the prefix per nesting level,
+#    ending in /shop/shop/shop/_esi/... 404s).
 
 location = ${XO_SHOP_PATH_PREFIX} {
     return 301 ${XO_SHOP_PATH_PREFIX}/;
 }
 
-location ^~ ${XO_SHOP_PATH_PREFIX}/ {
+location ~ ^${XO_SHOP_PATH_PREFIX}/(admin|api|store-api|bundles|theme|media|thumbnail|sitemap|_wdt|_profiler)(/|$) {
     rewrite ^${XO_SHOP_PATH_PREFIX}(/.*)$ $1 break;
     proxy_pass http://shopware:80;
-    # $http_host keeps a non-default port (multi-instance) — Shopware matches
-    # the sales channel domain including the port
     proxy_set_header Host                $http_host;
     proxy_set_header X-Forwarded-Proto   https;
     proxy_set_header X-Forwarded-Port    ${XO_PROXY_HTTPS_PORT};
     proxy_set_header X-Forwarded-For     $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Prefix  ${XO_SHOP_PATH_PREFIX};
+}
+
+location ^~ ${XO_SHOP_PATH_PREFIX}/ {
+    proxy_pass http://shopware:80;
+    proxy_set_header Host                $http_host;
+    proxy_set_header X-Forwarded-Proto   https;
+    proxy_set_header X-Forwarded-Port    ${XO_PROXY_HTTPS_PORT};
+    proxy_set_header X-Forwarded-For     $proxy_add_x_forwarded_for;
+    # no X-Forwarded-Prefix here — see HYBRID note above
 }
