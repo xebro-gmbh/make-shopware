@@ -1,10 +1,10 @@
 #--------------------------
 # xebro GmbH - Shopware - 2.1.0
 #--------------------------
-# Projekt-Spezifisches kommt ausschließlich aus .env: XO_SHOPWARE_THEME
-# (Projekt-Theme, leer = keins), XO_SHOPWARE_FIXTURES_CMD (bin/console-
-# Kommando für Demo-Daten, leer = keins), XO_SHOPWARE_APP_URL (öffentliche
-# Basis-URL — hinter dem proxy-Bundle inkl. XO_SHOP_PATH_PREFIX).
+# Everything project-specific comes from .env only: XO_SHOPWARE_THEME
+# (project theme, empty = none), XO_SHOPWARE_FIXTURES_CMD (bin/console
+# command for demo data, empty = none), XO_SHOPWARE_APP_URL (public base
+# URL — behind the proxy bundle including XO_SHOP_PATH_PREFIX).
 
 .PHONY: shopware.help shopware.logs shopware.bash shopware.console shopware.cmd shopware.cc \
         shopware.build.storefront shopware.watch.storefront shopware.build.admin shopware.watch.admin \
@@ -116,8 +116,8 @@ shopware.theme.dump: ## Dump theme config for hot-reload watchers
 
 shopware.domain: ## Point the storefront sales channel domain to XO_SHOPWARE_APP_URL
 	$(call target_name,$@)
-	@# sales-channel:update:domain ersetzt nur den Host und kann keinen
-	@# Pfad-Präfix setzen — deshalb direktes SQL (Headless-Kanal bleibt).
+	@# sales-channel:update:domain only replaces the host and cannot set a
+	@# path prefix — hence direct SQL (the headless channel is kept).
 	@${DOCKER_SHOPWARE_DB} mysql -uroot -proot shopware -e "UPDATE sales_channel_domain SET url='${XO_SHOPWARE_APP_URL}' WHERE url NOT LIKE '%headless%';" 2>/dev/null
 	@${SHOPWARE_CONSOLE} cache:clear
 
@@ -162,7 +162,7 @@ shopware.fixtures: ## Rebuild demo content via XO_SHOPWARE_FIXTURES_CMD, e.g. ma
 		${SHOPWARE_CONSOLE} ${XO_SHOPWARE_FIXTURES_CMD} $$(if [ -n "$${only}" ]; then echo "--only=$${only}"; fi); \
 		${SHOPWARE_CONSOLE} cache:clear; \
 	else \
-		printf "${Purple}XO_SHOPWARE_FIXTURES_CMD nicht gesetzt, überspringe Fixtures.\n"; \
+		printf "${Purple}XO_SHOPWARE_FIXTURES_CMD not set, skipping fixtures.\n"; \
 	fi
 
 shopware.build: ## (Re)build the shopware docker image

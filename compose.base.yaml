@@ -11,15 +11,15 @@ services:
       - "${XO_SHOPWARE_HTTP_PORT}:80"
     environment:
       APP_ENV: dev
-      # Öffentliche Basis-URL — hinter dem proxy-Bundle z. B.
+      # public base URL — behind the proxy bundle e.g.
       # https://<XO_SERVER_NAME><XO_SHOP_PATH_PREFIX>
       APP_URL: ${XO_SHOPWARE_APP_URL}
       APP_SECRET: dev-secret-not-for-production-0123456789abcdef0123456789abcdef
       DATABASE_URL: mysql://root:root@shopware-db:3306/shopware
       MAILER_DSN: smtp://shopware-mail:1025
       SHOPWARE_SKIP_WEBINSTALLER: 1
-      # REMOTE_ADDR = dem direkten Peer (Proxy-Container) vertrauen; leer =
-      # kein Proxy-Vertrauen (Standalone-Betrieb ohne proxy-Bundle)
+      # REMOTE_ADDR = trust the direct peer (proxy container); empty = no
+      # proxy trust (standalone operation without the proxy bundle)
       TRUSTED_PROXIES: ${XO_SHOPWARE_TRUSTED_PROXIES}
       XDEBUG_MODE: ${XO_SHOPWARE_XDEBUG_MODE}
       COMPOSER_HOME: /tmp/composer
@@ -34,8 +34,8 @@ services:
         condition: service_healthy
     tty: true
     healthcheck:
-      # Pfad konfigurierbar: hinter dem Proxy matcht "/" keinen Sales
-      # Channel mehr (Domain zeigt auf den Präfix) — dann /admin verwenden.
+      # path is configurable: behind the proxy "/" no longer matches a
+      # sales channel (domain points at the prefix) — use /admin then.
       test: ["CMD", "curl", "-f", "http://localhost${XO_SHOPWARE_HEALTHCHECK_PATH}"]
       interval: 10s
       timeout: 5s

@@ -1,8 +1,8 @@
-# Route-Snippet des shopware-Bundles: Shop unter ${XO_SHOP_PATH_PREFIX}/.
-# Öffentlich bleibt der Präfix erhalten; intern wird er gestrippt und per
-# X-Forwarded-Prefix ersetzt (Symfony-Konvention — ohne Stripping wären
-# /admin, /api und /store-api unter dem Präfix 404). Gleicher Vertrag wie in
-# Produktion (dort strippt eine CloudFront Function).
+# Route snippet of the shopware bundle: shop under ${XO_SHOP_PATH_PREFIX}/.
+# Publicly the prefix is preserved; internally it is stripped and replaced by
+# X-Forwarded-Prefix (Symfony convention — without stripping, /admin, /api
+# and /store-api would be 404 under the prefix). Same contract as in
+# production (where a CloudFront function does the stripping).
 
 location = ${XO_SHOP_PATH_PREFIX} {
     return 301 ${XO_SHOP_PATH_PREFIX}/;

@@ -1,41 +1,41 @@
 # make-shopware
 
-Shopware-6-Bundle für das xebro-Dev-Setup (`make-core`): Dev-Image auf dem
-zentralen FrankenPHP-Base-Image (`base/shopware` aus dem xebro-ECR) plus
-eigener MySQL- und Mailpit-Container. Der Shop-Code liegt versioniert in
-`./app` (Composer-Projekt, `shopware.project` bootstrapped ihn), die DB ist
-flüchtig und wird per `make init` aufgebaut.
+Shopware 6 bundle for the xebro dev setup (`make-core`): dev image on top of
+the central FrankenPHP base image (`base/shopware` from the xebro ECR) plus
+dedicated MySQL and Mailpit containers. The shop code lives versioned in
+`./app` (Composer project, bootstrapped by `shopware.project`); the database
+is ephemeral and gets rebuilt via `make init`.
 
-## Erstinstallation
+## First-time setup
 
 ```bash
-make install   # .env seeden, Verzeichnisse, Proxy-Route registrieren
-make init      # Image bauen, Projekt bootstrappen, Container starten,
-               # Shopware installieren, Theme + Fixtures
+make install   # seed .env, create directories, register proxy route
+make init      # build image, bootstrap project, start containers,
+               # install Shopware, theme + fixtures
 ```
 
-## Projekt-Konfiguration (alles über .env)
+## Project configuration (all via .env)
 
-| Variable | Zweck |
+| Variable | Purpose |
 |---|---|
-| `XO_SHOPWARE_APP_URL` | Öffentliche Basis-URL. Standalone `http://localhost:8080`; hinter dem proxy-Bundle `https://<XO_SERVER_NAME><XO_SHOP_PATH_PREFIX>` |
-| `XO_SHOP_PATH_PREFIX` | Pfad-Präfix hinter dem Proxy (Default `/shop`) |
-| `XO_SHOPWARE_TRUSTED_PROXIES` | `REMOTE_ADDR` hinter dem Proxy, leer standalone |
-| `XO_SHOPWARE_HEALTHCHECK_PATH` | `/` standalone; `/admin` hinter dem Proxy (die Domain matcht `/` dann nicht mehr) |
-| `XO_SHOPWARE_THEME` | Projekt-Theme-Plugin (leer = keins) |
-| `XO_SHOPWARE_FIXTURES_CMD` | `bin/console`-Kommando für Demo-Daten (leer = keins) |
+| `XO_SHOPWARE_APP_URL` | Public base URL. Standalone `http://localhost:8080`; behind the proxy bundle `https://<XO_SERVER_NAME><XO_SHOP_PATH_PREFIX>` |
+| `XO_SHOP_PATH_PREFIX` | Path prefix behind the proxy (default `/shop`) |
+| `XO_SHOPWARE_TRUSTED_PROXIES` | `REMOTE_ADDR` behind the proxy, empty standalone |
+| `XO_SHOPWARE_HEALTHCHECK_PATH` | `/` standalone; `/admin` behind the proxy (the domain no longer matches `/` then) |
+| `XO_SHOPWARE_THEME` | Project theme plugin (empty = none) |
+| `XO_SHOPWARE_FIXTURES_CMD` | `bin/console` command for demo data (empty = none) |
 
-## Proxy-Integration
+## Proxy integration
 
-`shopware.install` registriert die Route
-(`docker/config/proxy/20-shop.conf.template`): öffentlich bleibt der
-`${XO_SHOP_PATH_PREFIX}`-URL-Raum vollständig erhalten, intern strippt der
-Proxy den Präfix und setzt `X-Forwarded-Prefix` (Symfony-Konvention — sonst
-wären `/admin`, `/api`, `/store-api` unter dem Präfix 404). Die App braucht
-dafür `trusted_headers` inkl. `x-forwarded-prefix` in
-`app/config/packages/framework.yaml`. `shopware.domain` setzt die
-Sales-Channel-Domain per SQL auf `XO_SHOPWARE_APP_URL`
-(`sales-channel:update:domain` kann keinen Pfad setzen).
+`shopware.install` registers the route
+(`docker/config/proxy/20-shop.conf.template`): publicly the
+`${XO_SHOP_PATH_PREFIX}` URL space is fully preserved; internally the proxy
+strips the prefix and sets `X-Forwarded-Prefix` (Symfony convention — without
+stripping, `/admin`, `/api` and `/store-api` would be 404 under the prefix).
+The app needs `trusted_headers` including `x-forwarded-prefix` in
+`app/config/packages/framework.yaml` for this. `shopware.domain` sets the
+sales channel domain via SQL to `XO_SHOPWARE_APP_URL`
+(`sales-channel:update:domain` cannot set a path).
 
 ## License
 
