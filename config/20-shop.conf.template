@@ -1,0 +1,19 @@
+# Route-Snippet des shopware-Bundles: Shop unter ${XO_SHOP_PATH_PREFIX}/.
+# Öffentlich bleibt der Präfix erhalten; intern wird er gestrippt und per
+# X-Forwarded-Prefix ersetzt (Symfony-Konvention — ohne Stripping wären
+# /admin, /api und /store-api unter dem Präfix 404). Gleicher Vertrag wie in
+# Produktion (dort strippt eine CloudFront Function).
+
+location = ${XO_SHOP_PATH_PREFIX} {
+    return 301 ${XO_SHOP_PATH_PREFIX}/;
+}
+
+location ^~ ${XO_SHOP_PATH_PREFIX}/ {
+    rewrite ^${XO_SHOP_PATH_PREFIX}(/.*)$ $1 break;
+    proxy_pass http://shopware:80;
+    proxy_set_header Host                $host;
+    proxy_set_header X-Forwarded-Proto   https;
+    proxy_set_header X-Forwarded-Port    ${XO_PROXY_HTTPS_PORT};
+    proxy_set_header X-Forwarded-For     $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Prefix  ${XO_SHOP_PATH_PREFIX};
+}
