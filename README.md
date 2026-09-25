@@ -25,6 +25,25 @@ make init      # pull base-dev image, bootstrap project, start containers,
 | `XO_SHOPWARE_THEME` | Project theme plugin (empty = none) |
 | `XO_SHOPWARE_FIXTURES_CMD` | `bin/console` command for demo data (empty = none) |
 
+## Worker and scheduler
+
+The message queue is consumed by two dedicated containers, mirroring the
+prod stack (ECS worker/scheduler services):
+
+| Service | Command |
+|---|---|
+| `shopware-worker` | `messenger:consume async low_priority --time-limit=300` |
+| `shopware-scheduler` | `scheduled-task:run --time-limit=300` |
+
+Both exit after the time limit and are restarted by Docker. Targets:
+`shopware.worker.logs`, `shopware.worker.restart` (message handlers are
+loaded once per process — restart after changing them),
+`shopware.scheduler.logs`.
+
+Because a real worker is running, disable the browser admin worker in the
+app (`shopware.admin_worker.enable_admin_worker: false`), otherwise two
+open admin sessions collide on the consume lock (HTTP 409).
+
 ## Proxy integration
 
 `shopware.install` registers the route

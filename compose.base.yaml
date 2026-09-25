@@ -7,7 +7,7 @@ services:
     container_name: ${XO_PROJECT_NAME}-shopware
     ports:
       - "${XO_SHOPWARE_HTTP_PORT}:80"
-    environment:
+    environment: &shopware-env
       APP_ENV: dev
       # public base URL — behind the proxy bundle e.g.
       # https://<XO_SERVER_NAME><XO_SHOP_PATH_PREFIX>
@@ -21,7 +21,7 @@ services:
       TRUSTED_PROXIES: ${XO_SHOPWARE_TRUSTED_PROXIES}
       XDEBUG_MODE: ${XO_SHOPWARE_XDEBUG_MODE}
       COMPOSER_HOME: /tmp/composer
-    volumes:
+    volumes: &shopware-volumes
       # XO_SHOPWARE_PROJECT_DIR: where the shop code lives relative to the
       # project root ("." = root, "shop" = subrepo layout)
       - ${XO_ROOT_DIR}/${XO_SHOPWARE_PROJECT_DIR:-.}/app:/app:rw
@@ -41,6 +41,47 @@ services:
       timeout: 5s
       retries: 20
       start_period: 60s
+
+  # Queue worker + scheduler as separate containers — same split as the
+  # prod stack (ECS worker/scheduler services). Both exit after the time
+  # limit and get restarted by Docker (fresh PHP process, no leaks), exactly
+  # like ECS does. With a real worker around, the browser admin worker in
+  # the administration is redundant: disable it in the app
+  # (shopware.admin_worker.enable_admin_worker: false), otherwise two open
+  # admin sessions collide on the consume lock (HTTP 409).
+  shopware-worker:
+    image: ${BASE_ECR_REGISTRY}/base/shopware:${XO_SHOPWARE_BASE_DEV_TAG:-base-dev}
+    container_name: ${XO_PROJECT_NAME}-shopware-worker
+    # the base image ships an HTTP healthcheck (Caddy metrics) — meaningless
+    # for a CLI process, it would only flag the container unhealthy
+    healthcheck:
+      disable: true
+    command: ["php", "/app/bin/console", "messenger:consume", "async", "low_priority", "--time-limit=300", "--memory-limit=512M"]
+    restart: unless-stopped
+    environment: *shopware-env
+    volumes: *shopware-volumes
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      shopware:
+        condition: service_healthy
+
+  shopware-scheduler:
+    image: ${BASE_ECR_REGISTRY}/base/shopware:${XO_SHOPWARE_BASE_DEV_TAG:-base-dev}
+    container_name: ${XO_PROJECT_NAME}-shopware-scheduler
+    # the base image ships an HTTP healthcheck (Caddy metrics) — meaningless
+    # for a CLI process, it would only flag the container unhealthy
+    healthcheck:
+      disable: true
+    command: ["php", "/app/bin/console", "scheduled-task:run", "--time-limit=300", "--memory-limit=384M"]
+    restart: unless-stopped
+    environment: *shopware-env
+    volumes: *shopware-volumes
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      shopware:
+        condition: service_healthy
 
   shopware-db:
     image: mysql:8.4

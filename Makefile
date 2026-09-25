@@ -1,5 +1,5 @@
 #--------------------------
-# xebro GmbH - Shopware - 2.1.0
+# xebro GmbH - Shopware - 2.2.0
 #--------------------------
 # Everything project-specific comes from .env only: XO_SHOPWARE_THEME
 # (project theme, empty = none), XO_SHOPWARE_FIXTURES_CMD (bin/console
@@ -7,6 +7,7 @@
 # URL — behind the proxy bundle including XO_SHOP_PATH_PREFIX).
 
 .PHONY: shopware.help shopware.logs shopware.bash shopware.console shopware.cmd shopware.cc \
+        shopware.worker.logs shopware.worker.restart shopware.scheduler.logs \
         shopware.build.storefront shopware.watch.storefront shopware.build.admin shopware.watch.admin \
         shopware.db shopware.dump shopware.plugin.refresh shopware.plugin.install shopware.plugin.list \
         shopware.plugin.create shopware.plugin.uninstall \
@@ -32,6 +33,16 @@ shopware.help:
 
 shopware.logs: ## Show shopware docker logs
 	@${DOCKER_COMPOSE} logs -f shopware
+
+shopware.worker.logs: ## Show queue worker logs (messenger:consume)
+	@${DOCKER_COMPOSE} logs -f shopware-worker
+
+shopware.worker.restart: ## Restart the queue worker, e.g. after code changes in message handlers
+	$(call target_name,$@)
+	@${DOCKER_COMPOSE} restart shopware-worker
+
+shopware.scheduler.logs: ## Show scheduler logs (scheduled-task:run)
+	@${DOCKER_COMPOSE} logs -f shopware-scheduler
 
 shopware.bash: ## Open bash inside the shopware container
 	@${DOCKER_SHOPWARE} bash
@@ -171,12 +182,12 @@ shopware.fixtures: ## Rebuild demo content via XO_SHOPWARE_FIXTURES_CMD, e.g. ma
 shopware.build: ## Pull the current base-dev image (built globally, no local build)
 	@${DOCKER_COMPOSE} pull shopware
 
-shopware.restart: ## Restart the shopware container
+shopware.restart: ## Restart the shopware, worker and scheduler containers
 	$(call target_name,$@)
-	@${DOCKER_COMPOSE} restart shopware
+	@${DOCKER_COMPOSE} restart shopware shopware-worker shopware-scheduler
 
 shopware.reset: ## Remove the shopware containers (DB is ephemeral); rebuild with make init
-	@${DOCKER_COMPOSE} down shopware shopware-db shopware-mail
+	@${DOCKER_COMPOSE} down shopware shopware-worker shopware-scheduler shopware-db shopware-mail
 
 shopware.post_start:
 	@$(call target_name,"Shopware")
@@ -185,6 +196,7 @@ shopware.post_start:
 	@printf "${Purple}Mailpit:     ${Yellow}http://localhost:${XO_SHOPWARE_MAIL_PORT}\n"
 	@printf "${Purple}MySQL:       ${Yellow}localhost:${XO_SHOPWARE_DB_PORT} ${Gray}(root / root, db: shopware)\n"
 	@printf "${Purple}Plugins DIR: ${Yellow}${XO_SHOPWARE_PROJECT_DIR}/custom/plugins\n"
+	@printf "${Purple}Queue:       ${Yellow}shopware-worker / shopware-scheduler ${Gray}(make shopware.worker.logs)\n"
 
 shopware.debug: ## Print shopware component environment
 	@$(call target_name,"DEBUGGING Shopware")
