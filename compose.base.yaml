@@ -3,6 +3,8 @@ services:
     # No local image build (raffl pattern): the dev image is built globally
     # by the base-image-shopware repo and pushed to the root-account ECR.
     # The app subrepo only ships the Dockerfile for the final prod image.
+    # XO_SHOPWARE_BASE_DEV_TAG: base-dev (rolling) or a pinned dev-<build>
+    # from the project .env — the bundle itself stays version-neutral.
     image: ${BASE_ECR_REGISTRY}/base/shopware:${XO_SHOPWARE_BASE_DEV_TAG:-base-dev}
     container_name: ${XO_PROJECT_NAME}-shopware
     ports:

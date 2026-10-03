@@ -24,6 +24,40 @@ make init      # pull base-dev image, bootstrap project, start containers,
 | `XO_SHOPWARE_HEALTHCHECK_PATH` | `/` standalone; `/admin` behind the proxy (the domain no longer matches `/` then) |
 | `XO_SHOPWARE_THEME` | Project theme plugin (empty = none) |
 | `XO_SHOPWARE_FIXTURES_CMD` | `bin/console` command for demo data (empty = none) |
+| `XO_SHOPWARE_BASE_DEV_TAG` | Tag of the dev image: rolling `base-dev` (default) or a pinned `dev-<build>` |
+
+## Pinning the base image
+
+Every build of `base-image-shopware` pushes the rolling `base-dev` tag plus
+an immutable `dev-<build>` (same build number as `web-<build>` and
+`ci-<build>` for the prod Dockerfile and the pipeline image). The bundle
+stays version-neutral; a project pins in its committed `.env`:
+
+```
+XO_SHOPWARE_BASE_DEV_TAG=dev-118
+```
+
+Renovate keeps the pin current with a custom manager in the project repo
+(needs read access to the ECR tag list, see the `renovate-runner` repo):
+
+```json
+{
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.env$/"],
+      "matchStrings": ["XO_SHOPWARE_BASE_DEV_TAG=(?<currentValue>dev-\\d+)"],
+      "depNameTemplate": "641495738494.dkr.ecr.eu-central-1.amazonaws.com/base/shopware",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "regex:^(?<compatibility>[a-z]+)-(?<major>\\d+)$"
+    }
+  ]
+}
+```
+
+After a bump run `make shopware.build` (pull) and restart the containers.
+Only the last 20 builds per variant are kept in the registry, so do not let
+the pin fall that far behind.
 
 ## Worker and scheduler
 
