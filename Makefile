@@ -1,10 +1,12 @@
 #--------------------------
-# xebro GmbH - Shopware - 2.2.0
+# xebro GmbH - Shopware - 2.2.1
 #--------------------------
 # Everything project-specific comes from .env only: XO_SHOPWARE_THEME
 # (project theme, empty = none), XO_SHOPWARE_FIXTURES_CMD (bin/console
 # command for demo data, empty = none), XO_SHOPWARE_APP_URL (public base
-# URL — behind the proxy bundle including XO_SHOP_PATH_PREFIX).
+# URL — behind the proxy bundle including XO_SHOP_PATH_PREFIX),
+# XO_SHOPWARE_BASE_DEV_TAG (dev image tag: rolling base-dev or a pinned
+# dev-<build>).
 
 .PHONY: shopware.help shopware.logs shopware.bash shopware.console shopware.cmd shopware.cc \
         shopware.worker.logs shopware.worker.restart shopware.scheduler.logs \
@@ -18,6 +20,8 @@
 
 # where the shop code lives relative to the project root ("." or e.g. "shop")
 XO_SHOPWARE_PROJECT_DIR ?= .
+# same fallback as in compose.base.yaml
+XO_SHOPWARE_BASE_DEV_TAG ?= base-dev
 
 DOCKER_SHOPWARE=${DOCKER_COMPOSE} exec shopware
 DOCKER_SHOPWARE_DB=${DOCKER_COMPOSE} exec shopware-db
@@ -179,7 +183,7 @@ shopware.fixtures: ## Rebuild demo content via XO_SHOPWARE_FIXTURES_CMD, e.g. ma
 		printf "${Purple}XO_SHOPWARE_FIXTURES_CMD not set, skipping fixtures.\n"; \
 	fi
 
-shopware.build: ## Pull the current base-dev image (built globally, no local build)
+shopware.build: ## Pull the dev image XO_SHOPWARE_BASE_DEV_TAG (built globally, no local build)
 	@${DOCKER_COMPOSE} pull shopware
 
 shopware.restart: ## Restart the shopware, worker and scheduler containers
@@ -202,7 +206,7 @@ shopware.debug: ## Print shopware component environment
 	@$(call target_name,"DEBUGGING Shopware")
 	@printf "${Purple}SHOPWARE: ${Yellow} ${SHOPWARE}\n"
 	@printf "${Purple}SHOPWARE_DIR: ${Yellow} ${SHOPWARE_DIR}\n"
-	@printf "${Purple}VERSION: ${Yellow} shopware/production ${XO_SHOPWARE_VERSION} ${Purple}BASE: ${Yellow}${BASE_ECR_REGISTRY}/base/shopware:base-web\n"
+	@printf "${Purple}VERSION: ${Yellow} shopware/production ${XO_SHOPWARE_VERSION} ${Purple}BASE: ${Yellow}${BASE_ECR_REGISTRY}/base/shopware:${XO_SHOPWARE_BASE_DEV_TAG}\n"
 
 debug: shopware.debug
 help: shopware.help
