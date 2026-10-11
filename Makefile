@@ -1,5 +1,5 @@
 #--------------------------
-# xebro GmbH - Shopware - 2.2.1
+# xebro GmbH - Shopware - 2.3.0
 #--------------------------
 # Everything project-specific comes from .env only: XO_SHOPWARE_THEME
 # (project theme, empty = none), XO_SHOPWARE_FIXTURES_CMD (bin/console
@@ -16,7 +16,7 @@
         shopware.theme.create shopware.theme.change shopware.theme.compile shopware.theme.refresh shopware.theme.dump \
         shopware.install shopware.init shopware.project shopware.setup shopware.fixtures shopware.domain \
         shopware.build shopware.restart shopware.reset shopware.post_start shopware.debug \
-        debug help install init post_start restart
+        debug help install post_start
 
 # where the shop code lives relative to the project root ("." or e.g. "shop")
 XO_SHOPWARE_PROJECT_DIR ?= .
@@ -24,7 +24,7 @@ XO_SHOPWARE_PROJECT_DIR ?= .
 XO_SHOPWARE_BASE_DEV_TAG ?= base-dev
 
 DOCKER_SHOPWARE=${DOCKER_COMPOSE} exec shopware
-DOCKER_SHOPWARE_DB=${DOCKER_COMPOSE} exec shopware-db
+DOCKER_SHOPWARE_DB=${DOCKER_COMPOSE} exec mysql
 SHOPWARE_CONSOLE=${DOCKER_SHOPWARE} php /app/bin/console
 
 SHOPWARE_DIR := $(patsubst $(XO_ROOT_DIR)/%,./%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
@@ -76,11 +76,11 @@ shopware.watch.admin: ## Administration hot-reload watcher
 	@${DOCKER_SHOPWARE} bash -c "cd /app && ./bin/watch-administration.sh"
 
 shopware.db: ## Open a MySQL shell on the shopware database
-	@${DOCKER_SHOPWARE_DB} mysql -uroot -proot shopware
+	@${DOCKER_SHOPWARE_DB} mysql -uroot -p${MYSQL_ROOT_PASSWORD} shopware
 
 shopware.dump: ## Dump the shopware database to ./shopware.sql
 	$(call target_name,$@)
-	@${DOCKER_SHOPWARE_DB} mysqldump -uroot -proot shopware > shopware.sql
+	@${DOCKER_SHOPWARE_DB} mysqldump -uroot -p${MYSQL_ROOT_PASSWORD} shopware > shopware.sql
 	@printf "${Purple}Dump written to: ${Yellow}./shopware.sql\n"
 
 shopware.plugin.refresh: ## Refresh the plugin list
@@ -136,12 +136,13 @@ shopware.domain: ## Point the storefront sales channel domain to XO_SHOPWARE_APP
 	$(call target_name,$@)
 	@# sales-channel:update:domain only replaces the host and cannot set a
 	@# path prefix — hence direct SQL (the headless channel is kept).
-	@${DOCKER_SHOPWARE_DB} mysql -uroot -proot shopware -e "UPDATE sales_channel_domain SET url='${XO_SHOPWARE_APP_URL}' WHERE url NOT LIKE '%headless%';" 2>/dev/null
+	@${DOCKER_SHOPWARE_DB} mysql -uroot -p${MYSQL_ROOT_PASSWORD} shopware -e "UPDATE sales_channel_domain SET url='${XO_SHOPWARE_APP_URL}' WHERE url NOT LIKE '%headless%';" 2>/dev/null
 	@${SHOPWARE_CONSOLE} cache:clear
 
 shopware.install:
 	$(call headline,"Installing shopware")
 	$(call seed_env_vars,".env","${SHOPWARE_DIR}config/.env.seed")
+	$(call ensure_env_vars,".env","${SHOPWARE_DIR}config/.env")
 	@mkdir -p ${XO_SHOPWARE_PROJECT_DIR}/custom/plugins ${XO_SHOPWARE_PROJECT_DIR}/custom/apps ${XO_SHOPWARE_PROJECT_DIR}/app
 	@mkdir -p ${XO_CONFIG_DIR}/proxy
 	$(call ensure_file,${SHOPWARE_DIR_ABS}config/20-shop.conf.template,${XO_CONFIG_DIR}/proxy)
@@ -163,7 +164,7 @@ shopware.project: ## Bootstrap the Shopware composer project into ./app (only if
 
 shopware.setup: ## Install Shopware (DB schema, admin user, sales channel) + theme + fixtures
 	$(call target_name,$@)
-	@${DOCKER_SHOPWARE_DB} mysql -uroot -proot -N -e "SELECT COUNT(*) FROM shopware.sales_channel" 2>/dev/null | grep -qv '^0$$' \
+	@${DOCKER_SHOPWARE_DB} mysql -uroot -p${MYSQL_ROOT_PASSWORD} -N -e "SELECT COUNT(*) FROM shopware.sales_channel" 2>/dev/null | grep -qv '^0$$' \
 		|| ${SHOPWARE_CONSOLE} system:install --create-database --basic-setup
 	@${SHOPWARE_CONSOLE} plugin:refresh
 	@if [ -n "${XO_SHOPWARE_THEME}" ]; then \
@@ -190,15 +191,15 @@ shopware.restart: ## Restart the shopware, worker and scheduler containers
 	$(call target_name,$@)
 	@${DOCKER_COMPOSE} restart shopware shopware-worker shopware-scheduler
 
-shopware.reset: ## Remove the shopware containers (DB is ephemeral); rebuild with make init
-	@${DOCKER_COMPOSE} down shopware shopware-worker shopware-scheduler shopware-db shopware-mail
+shopware.reset: ## Remove the Shopware application containers
+	@${DOCKER_COMPOSE} rm -sf shopware shopware-worker shopware-scheduler
 
 shopware.post_start:
 	@$(call target_name,"Shopware")
 	@printf "${Purple}Storefront:  ${Yellow}${XO_SHOPWARE_APP_URL}\n"
 	@printf "${Purple}Admin:       ${Yellow}${XO_SHOPWARE_APP_URL}/admin ${Gray}(admin / shopware)\n"
-	@printf "${Purple}Mailpit:     ${Yellow}http://localhost:${XO_SHOPWARE_MAIL_PORT}\n"
-	@printf "${Purple}MySQL:       ${Yellow}localhost:${XO_SHOPWARE_DB_PORT} ${Gray}(root / root, db: shopware)\n"
+	@printf "${Purple}Mailpit:     ${Yellow}http://localhost:${XO_MAILPIT_UI_PORT}\n"
+	@printf "${Purple}MySQL:       ${Yellow}localhost:${XO_MYSQL_PORT} ${Gray}(root / configured password, db: shopware)\n"
 	@printf "${Purple}Plugins DIR: ${Yellow}${XO_SHOPWARE_PROJECT_DIR}/custom/plugins\n"
 	@printf "${Purple}Queue:       ${Yellow}shopware-worker / shopware-scheduler ${Gray}(make shopware.worker.logs)\n"
 
@@ -211,6 +212,4 @@ shopware.debug: ## Print shopware component environment
 debug: shopware.debug
 help: shopware.help
 install: shopware.install
-init: shopware.init
 post_start: shopware.post_start
-restart: shopware.restart

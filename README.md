@@ -1,10 +1,9 @@
 # make-shopware
 
 Shopware 6 bundle for the XDS (`make-core`): dev image on top of
-the central FrankenPHP base image (`base/shopware` from the xebro ECR) plus
-dedicated MySQL and Mailpit containers. The shop code lives versioned in
-`./app` (Composer project, bootstrapped by `shopware.project`); the database
-is ephemeral and gets rebuilt via `make init`.
+the central FrankenPHP base image (`base/shopware` from the xebro ECR).
+The bundle uses the shared `mysql` and `mailpit` modules. The shop code lives
+versioned in `./app` (Composer project, bootstrapped by `shopware.project`).
 
 ## First-time setup
 
@@ -19,12 +18,20 @@ make init      # pull base-dev image, bootstrap project, start containers,
 | Variable | Purpose |
 |---|---|
 | `XO_SHOPWARE_APP_URL` | Public base URL. Standalone `http://localhost:8080`; behind the proxy bundle `https://<XO_SERVER_NAME><XO_SHOP_PATH_PREFIX>` |
+| `XO_SHOPWARE_APP_ENV` | Symfony environment (default `dev`) |
+| `XO_SHOPWARE_APP_SECRET` | Application secret, seeded once and project-overridable |
+| `XO_SHOPWARE_DATABASE_URL` | Shopware database connection, refreshed from the MySQL module variables by `make shopware.install` |
+| `XO_SHOPWARE_MAILER_DSN` | Shopware mail transport, refreshed from the mail module's `MAILER_DSN` by `make shopware.install` |
 | `XO_SHOP_PATH_PREFIX` | Path prefix behind the proxy (default `/shop`) |
 | `XO_SHOPWARE_TRUSTED_PROXIES` | `REMOTE_ADDR` behind the proxy, empty standalone |
 | `XO_SHOPWARE_HEALTHCHECK_PATH` | `/` standalone; `/admin` behind the proxy (the domain no longer matches `/` then) |
 | `XO_SHOPWARE_THEME` | Project theme plugin (empty = none) |
 | `XO_SHOPWARE_FIXTURES_CMD` | `bin/console` command for demo data (empty = none) |
 | `XO_SHOPWARE_BASE_DEV_TAG` | Tag of the dev image: rolling `base-dev` (default) or a pinned `dev-<build>` |
+
+`XO_SHOPWARE_DATABASE_URL` and `XO_SHOPWARE_MAILER_DSN` are generated values.
+`make shopware.install` refreshes them from `MYSQL_ROOT_PASSWORD` and
+`MAILER_DSN`; projects should configure those source variables instead.
 
 ## Pinning the base image
 
