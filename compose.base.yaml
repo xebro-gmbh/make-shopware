@@ -29,9 +29,9 @@ services:
     volumes: &shopware-volumes
       # XO_SHOPWARE_PROJECT_DIR: where the shop code lives relative to the
       # project root ("." = root, "shop" = subrepo layout)
+      # Plugins and apps live inside the Composer project (app/custom/...),
+      # the Shopware default layout — no separate mounts.
       - ${XO_ROOT_DIR}/${XO_SHOPWARE_PROJECT_DIR:-.}/app:/app:rw
-      - ${XO_ROOT_DIR}/${XO_SHOPWARE_PROJECT_DIR:-.}/custom/plugins:/app/custom/plugins:rw
-      - ${XO_ROOT_DIR}/${XO_SHOPWARE_PROJECT_DIR:-.}/custom/apps:/app/custom/apps:rw
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

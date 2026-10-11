@@ -1,5 +1,5 @@
 #--------------------------
-# xebro GmbH - Shopware - 2.3.0
+# xebro GmbH - Shopware - 3.0.0
 #--------------------------
 # Everything project-specific comes from .env only: XO_SHOPWARE_THEME
 # (project theme, empty = none), XO_SHOPWARE_FIXTURES_CMD (bin/console
@@ -96,11 +96,11 @@ shopware.plugin.install: ## Install + activate a plugin, e.g. make shopware.plug
 	@${SHOPWARE_CONSOLE} plugin:install --activate $${plugin}
 	@${SHOPWARE_CONSOLE} cache:clear
 
-shopware.plugin.create: ## Scaffold a new plugin in ./custom/plugins, e.g. make shopware.plugin.create plugin=MyPlugin
+shopware.plugin.create: ## Scaffold a new plugin in ./app/custom/plugins, e.g. make shopware.plugin.create plugin=MyPlugin
 	$(call target_name,$@)
 	@${SHOPWARE_CONSOLE} plugin:create $${plugin}
 	@${SHOPWARE_CONSOLE} plugin:refresh
-	@printf "${Purple}Plugin created: ${Yellow}./custom/plugins/$${plugin}\n"
+	@printf "${Purple}Plugin created: ${Yellow}${XO_SHOPWARE_PROJECT_DIR}/app/custom/plugins/$${plugin}\n"
 	@printf "${Purple}Install with:   ${Yellow}make shopware.plugin.install plugin=$${plugin}\n"
 
 shopware.plugin.uninstall: ## Uninstall a plugin, e.g. make shopware.plugin.uninstall plugin=MyPlugin
@@ -108,11 +108,11 @@ shopware.plugin.uninstall: ## Uninstall a plugin, e.g. make shopware.plugin.unin
 	@${SHOPWARE_CONSOLE} plugin:uninstall $${plugin}
 	@${SHOPWARE_CONSOLE} cache:clear
 
-shopware.theme.create: ## Scaffold a new theme plugin in ./custom/plugins, e.g. make shopware.theme.create theme=MyTheme
+shopware.theme.create: ## Scaffold a new theme plugin in ./app/custom/plugins, e.g. make shopware.theme.create theme=MyTheme
 	$(call target_name,$@)
 	@${SHOPWARE_CONSOLE} theme:create $${theme}
 	@${SHOPWARE_CONSOLE} plugin:refresh
-	@printf "${Purple}Theme created: ${Yellow}./custom/plugins/$${theme}\n"
+	@printf "${Purple}Theme created: ${Yellow}${XO_SHOPWARE_PROJECT_DIR}/app/custom/plugins/$${theme}\n"
 	@printf "${Purple}Activate with: ${Yellow}make shopware.plugin.install plugin=$${theme} && make shopware.theme.change theme=$${theme}\n"
 
 shopware.theme.change: ## Assign a theme to all sales channels, e.g. make shopware.theme.change theme=MyTheme
@@ -143,7 +143,7 @@ shopware.install:
 	$(call headline,"Installing shopware")
 	$(call seed_env_vars,".env","${SHOPWARE_DIR}config/.env.seed")
 	$(call ensure_env_vars,".env","${SHOPWARE_DIR}config/.env")
-	@mkdir -p ${XO_SHOPWARE_PROJECT_DIR}/custom/plugins ${XO_SHOPWARE_PROJECT_DIR}/custom/apps ${XO_SHOPWARE_PROJECT_DIR}/app
+	@mkdir -p ${XO_SHOPWARE_PROJECT_DIR}/app/custom/plugins ${XO_SHOPWARE_PROJECT_DIR}/app/custom/apps
 	@mkdir -p ${XO_CONFIG_DIR}/proxy
 	$(call ensure_file,${SHOPWARE_DIR_ABS}config/20-shop.conf.template,${XO_CONFIG_DIR}/proxy)
 
@@ -200,7 +200,7 @@ shopware.post_start:
 	@printf "${Purple}Admin:       ${Yellow}${XO_SHOPWARE_APP_URL}/admin ${Gray}(admin / shopware)\n"
 	@printf "${Purple}Mailpit:     ${Yellow}http://localhost:${XO_MAILPIT_UI_PORT}\n"
 	@printf "${Purple}MySQL:       ${Yellow}localhost:${XO_MYSQL_PORT} ${Gray}(root / configured password, db: shopware)\n"
-	@printf "${Purple}Plugins DIR: ${Yellow}${XO_SHOPWARE_PROJECT_DIR}/custom/plugins\n"
+	@printf "${Purple}Plugins DIR: ${Yellow}${XO_SHOPWARE_PROJECT_DIR}/app/custom/plugins\n"
 	@printf "${Purple}Queue:       ${Yellow}shopware-worker / shopware-scheduler ${Gray}(make shopware.worker.logs)\n"
 
 shopware.debug: ## Print shopware component environment

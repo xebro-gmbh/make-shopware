@@ -4,6 +4,12 @@ Shopware 6 bundle for the XDS (`make-core`): dev image on top of
 the central FrankenPHP base image (`base/shopware` from the xebro ECR).
 The bundle uses the shared `mysql` and `mailpit` modules. The shop code lives
 versioned in `./app` (Composer project, bootstrapped by `shopware.project`).
+Plugins and apps live inside it, in the Shopware default layout
+(`./app/custom/plugins`, `./app/custom/apps`); the container mounts only `./app`.
+
+Upgrading from 2.x: 2.x mounted `./custom/plugins` and `./custom/apps` from the
+project dir separately. Move them into `./app/custom/` (`git mv`), otherwise
+the container no longer sees them.
 
 ## First-time setup
 
